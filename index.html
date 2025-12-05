@@ -212,7 +212,7 @@
 
 <div class="header-section">
   <h1>📸 Photo Strip Booth</h1>
-  <p>SAMUDRA - MALAM KEAKRABAN<br>MANAJEMEN INFORMATIKA SAMUDRA</p>
+  <p>SAMUDRA - MALAM KEAKRABAN<br>MANAJEMEN INFORMATIKA 2025</p>
 </div>
 
 <div class="container py-4">
@@ -225,14 +225,14 @@
         <div id="countdown"></div>
         <div class="d-grid gap-2 mt-4">
           <button id="btnCapture" class="btn btn-primary btn-lg">
-            ⏱️ Ambil Foto (Countdown 3 Detik)
+            Ambil Foto (Countdown 3 Detik)
           </button>
           <button id="btnDownload" class="btn btn-success btn-lg" disabled>
-            ⬇️ Download Photo Strip Anda
+            Download Photo Strip Anda
           </button>
         </div>
         <div class="instruction-text mt-3">
-          💡 Petunjuk: Klik tombol "Ambil Foto" sebanyak 3 kali. Setelah semua foto terambil, klik "Download".
+          Petunjuk: Klik tombol "Ambil Foto" sebanyak 3 kali. Setelah semua foto terambil, klik "Download".
         </div>
       </div>
     </div>
@@ -240,7 +240,7 @@
     <!-- PREVIEW 3 FOTO -->
     <div class="col-lg-6 col-xl-5">
       <div class="preview-section">
-        <div class="preview-label">👀 Foto Anda (3 Slot)</div>
+        <div class="preview-label">Foto Anda (3 Slot)</div>
         <div class="d-flex gap-3 justify-content-center">
           <img id="thumb0" class="thumb" alt="Slot Foto 1">
           <img id="thumb1" class="thumb" alt="Slot Foto 2">
@@ -345,8 +345,8 @@
 
   // ==== FLIP KAMERA (mirror selfie) ====
   hiddenCtx.save();
-  hiddenCtx.scale(-1, 1);
-  hiddenCtx.translate(-size, 0);
+  hiddenCtx.scale(1, 1);
+  hiddenCtx.translate(size, 0);
 
   hiddenCtx.drawImage(
     video,
