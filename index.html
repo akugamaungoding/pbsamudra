@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title class>Photo Strip - Makrab MI Samudra</title>
+  <title>Photo Strip - Makrab MI Samudra</title>
 
   <!-- BOOTSTRAP -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -51,6 +51,10 @@
       border: 4px solid #1976d2;
       box-shadow: 0 8px 25px rgba(25, 118, 210, 0.3);
       background: #0d47a1;
+
+      /* Preview kamera kotak (1:1) */
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
     }
 
     #countdown {
@@ -127,7 +131,7 @@
       max-width: 130px;
       border-radius: 12px;
       border: 3px solid #1976d2;
-      aspect-ratio: 3/4;
+      aspect-ratio: 1 / 1;  /* 1:1 thumbnail */
       object-fit: cover;
       background: #e3f2fd;
       transition: all 0.3s ease;
@@ -281,7 +285,7 @@
   const photos = []; // simpan Image object hasil 3 foto
 
   // === 1. BUKA KAMERA ===
-  navigator.mediaDevices.getUserMedia({ video: true })
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
     .then(stream => {
       video.srcObject = stream;
     })
@@ -311,15 +315,43 @@
     }, 1000);
   });
 
+  // === 2a. CAPTURE 1:1 (square) DARI TENGAH VIDEO ===
   function takePhoto() {
-    // Ukuran foto per slot (sesuaikan kalau mau)
-    const w = 400;
-    const h = 533; // 3:4
+    // ukuran final kotak (1:1)
+    const size = 440; // disesuaikan dengan slot 440x440 di template
 
-    hiddenShot.width = w;
-    hiddenShot.height = h;
+    hiddenShot.width = size;
+    hiddenShot.height = size;
 
-    hiddenCtx.drawImage(video, 0, 0, w, h);
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+
+    if (!vw || !vh) {
+      alert('Video belum siap. Coba ambil foto lagi sebentar lagi.');
+      return;
+    }
+
+    const videoAspect = vw / vh;
+    let sx, sy, sSize;
+
+    if (videoAspect > 1) {
+      // video lebih lebar → crop tengah horizontal
+      sSize = vh;
+      sx = (vw - sSize) / 2;
+      sy = 0;
+    } else {
+      // video lebih tinggi → crop tengah vertikal
+      sSize = vw;
+      sx = 0;
+      sy = (vh - sSize) / 2;
+    }
+
+    // Ambil kotak tengah dari video → masukkan ke canvas kotak
+    hiddenCtx.drawImage(
+      video,
+      sx, sy, sSize, sSize,   // source (square di tengah video)
+      0, 0, size, size        // destination (square canvas)
+    );
 
     const img = new Image();
     img.src = hiddenShot.toDataURL('image/png');
@@ -341,10 +373,8 @@
 
   // === 3. LOAD TEMPLATE STRIP ===
   const templateImg = new Image();
-  // Load template dengan mode CORS-safe. Agar tidak "taint" canvas,
-  // pastikan `template.png` dilayani dari origin yang sama (bukan dari data URL/remote tanpa CORS).
   templateImg.crossOrigin = 'anonymous';
-  templateImg.src = 'template.png'; // TARUH FILE INI DI FOLDER YANG SAMA dan layani via HTTP
+  templateImg.src = 'template.png'; // TARUH FILE INI DI FOLDER YANG SAMA
   let templateLoaded = false;
 
   templateImg.onload = () => {
@@ -369,28 +399,21 @@
     // Clear canvas first
     finalCtx.clearRect(0, 0, finalCanvas.width, finalCanvas.height);
 
-    // POSISI 3 LUBANG DI TEMPLATE (untuk template 500x1500 dengan header di atas)
-    // Rekomendasi ukuran foto per slot: 440 x 440 px
-    // Posisi (X, Y) dihitung dari kiri-atas template (0,0)
-    // - Foto 1: X=30, Y=140
-    // - Foto 2: X=30, Y=590
-    // - Foto 3: X=30, Y=1040
+    // POSISI 3 SLOT FOTO (1:1) DI TEMPLATE
+    // disesuaikan dengan template 500x1500 misalnya
     const slots = [
-      { x: 30,  y: 40,  w: 440, h: 440 }, // foto 1 (top)
-
-      { x: 30,  y: 520,  w: 440, h: 440 }, // foto 2 (middle)
-      { x: 30,  y: 1000, w: 440, h: 440 }  // foto 3 (bottom)
+      { x: 30,  y: 40,   w: 440, h: 440 },   // foto 1 (atas)
+      { x: 30,  y: 520,  w: 440, h: 440 },   // foto 2 (tengah)
+      { x: 30,  y: 1000, w: 440, h: 440 }    // foto 3 (bawah)
     ];
 
-    // IMPORTANT: draw photos first (they'll sit *behind* the template overlay).
-    // Then draw the `template.png` on top — make sure your template PNG has
-    // transparent windows where the photos should show through.
+    // Draw foto dulu (di belakang), baru template overlay di atasnya
     photos.forEach((img, i) => {
       const s = slots[i];
       finalCtx.drawImage(img, s.x, s.y, s.w, s.h);
     });
 
-    // draw template overlay on top (must be after photos so template is visible)
+    // Draw template overlay
     finalCtx.drawImage(templateImg, 0, 0);
 
     // Buat link download
@@ -398,7 +421,11 @@
     try {
       dataURL = finalCanvas.toDataURL('image/png');
     } catch (err) {
-      alert('Gagal membuat file image: canvas ter-taint (CORS).\nPastikan `template.png` berada di folder yang sama dan Anda membuka halaman lewat HTTP (jalankan `python -m http.server` atau `py -m http.server`).\nJika Anda meng-export template dari Canva, simpan PNG ke folder proyek dan muat ulang halaman.\nDetail error: ' + err.message);
+      alert(
+        'Gagal membuat file image: canvas ter-taint (CORS).\n' +
+        'Pastikan `template.png` berada di folder yang sama dan halaman dibuka lewat HTTP server.\n' +
+        'Misal: `python -m http.server`.\n\nDetail error: ' + err.message
+      );
       return;
     }
 
