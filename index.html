@@ -341,7 +341,10 @@
 
   // === 3. LOAD TEMPLATE STRIP ===
   const templateImg = new Image();
-  templateImg.src = 'template.png'; // TARUH FILE INI DI 1 FOLDER DENGAN HTML
+  // Load template dengan mode CORS-safe. Agar tidak "taint" canvas,
+  // pastikan `template.png` dilayani dari origin yang sama (bukan dari data URL/remote tanpa CORS).
+  templateImg.crossOrigin = 'anonymous';
+  templateImg.src = 'template.png'; // TARUH FILE INI DI FOLDER YANG SAMA dan layani via HTTP
   let templateLoaded = false;
 
   templateImg.onload = () => {
@@ -367,12 +370,16 @@
     finalCtx.clearRect(0, 0, finalCanvas.width, finalCanvas.height);
     finalCtx.drawImage(templateImg, 0, 0);
 
-    // POSISI 3 LUBANG DI TEMPLATE
-    // >>> SESUAIKAN angka x, y, w, h DENGAN LUBANG DI template.png <<<
+    // POSISI 3 LUBANG DI TEMPLATE (untuk template 500x1500 dengan header di atas)
+    // Rekomendasi ukuran foto per slot: 440 x 440 px
+    // Posisi (X, Y) dihitung dari kiri-atas template (0,0)
+    // - Foto 1: X=30, Y=140
+    // - Foto 2: X=30, Y=590
+    // - Foto 3: X=30, Y=1040
     const slots = [
-      { x: 80,  y: 80,  w: 350, h: 470 }, // foto 1
-      { x: 480, y: 80,  w: 350, h: 470 }, // foto 2
-      { x: 880, y: 80,  w: 350, h: 470 }  // foto 3
+      { x: 30,  y: 140,  w: 440, h: 440 }, // foto 1 (top)
+      { x: 30,  y: 590,  w: 440, h: 440 }, // foto 2 (middle)
+      { x: 30,  y: 1040, w: 440, h: 440 }  // foto 3 (bottom)
     ];
 
     photos.forEach((img, i) => {
@@ -381,7 +388,14 @@
     });
 
     // Buat link download
-    const dataURL = finalCanvas.toDataURL('image/png');
+    let dataURL;
+    try {
+      dataURL = finalCanvas.toDataURL('image/png');
+    } catch (err) {
+      alert('Gagal membuat file image: canvas ter-taint (CORS).\nPastikan `template.png` berada di folder yang sama dan Anda membuka halaman lewat HTTP (jalankan `python -m http.server` atau `py -m http.server`).\nJika Anda meng-export template dari Canva, simpan PNG ke folder proyek dan muat ulang halaman.\nDetail error: ' + err.message);
+      return;
+    }
+
     const a = document.createElement('a');
     a.href = dataURL;
     a.download = 'photo-strip-makrab-mi-samudra.png';
