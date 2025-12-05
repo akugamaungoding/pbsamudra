@@ -366,9 +366,8 @@
     finalCanvas.width = templateImg.width;
     finalCanvas.height = templateImg.height;
 
-    // gambar template background
+    // Clear canvas first
     finalCtx.clearRect(0, 0, finalCanvas.width, finalCanvas.height);
-    finalCtx.drawImage(templateImg, 0, 0);
 
     // POSISI 3 LUBANG DI TEMPLATE (untuk template 500x1500 dengan header di atas)
     // Rekomendasi ukuran foto per slot: 440 x 440 px
@@ -377,15 +376,22 @@
     // - Foto 2: X=30, Y=590
     // - Foto 3: X=30, Y=1040
     const slots = [
-      { x: 30,  y: 140,  w: 440, h: 440 }, // foto 1 (top)
-      { x: 30,  y: 590,  w: 440, h: 440 }, // foto 2 (middle)
-      { x: 30,  y: 1040, w: 440, h: 440 }  // foto 3 (bottom)
+      { x: 30,  y: 40,  w: 440, h: 440 }, // foto 1 (top)
+
+      { x: 30,  y: 520,  w: 440, h: 440 }, // foto 2 (middle)
+      { x: 30,  y: 1000, w: 440, h: 440 }  // foto 3 (bottom)
     ];
 
+    // IMPORTANT: draw photos first (they'll sit *behind* the template overlay).
+    // Then draw the `template.png` on top — make sure your template PNG has
+    // transparent windows where the photos should show through.
     photos.forEach((img, i) => {
       const s = slots[i];
       finalCtx.drawImage(img, s.x, s.y, s.w, s.h);
     });
+
+    // draw template overlay on top (must be after photos so template is visible)
+    finalCtx.drawImage(templateImg, 0, 0);
 
     // Buat link download
     let dataURL;
