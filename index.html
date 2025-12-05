@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -28,6 +29,7 @@
       border-radius: 0 0 20px 20px;
       box-shadow: 0 4px 20px rgba(13, 71, 161, 0.2);
       margin-bottom: 2rem;
+      text-align: center; /* JUDUL & SUBJUDUL RATA TENGAH */
     }
 
     .header-section h1 {
@@ -55,6 +57,9 @@
       /* Preview kamera kotak (1:1) */
       aspect-ratio: 1 / 1;
       object-fit: cover;
+
+      /* FLIP PREVIEW (mirror selfie) */
+      transform: scaleX(-1);
     }
 
     #countdown {
@@ -315,59 +320,60 @@
     }, 1000);
   });
 
-  // === 2a. CAPTURE 1:1 (square) DARI TENGAH VIDEO ===
+  // === 2a. CAPTURE 1:1 (square) DARI TENGAH VIDEO + MIRROR ===
   function takePhoto() {
-  const size = 440;
+    const size = 440;
 
-  hiddenShot.width = size;
-  hiddenShot.height = size;
+    hiddenShot.width = size;
+    hiddenShot.height = size;
 
-  const vw = video.videoWidth;
-  const vh = video.videoHeight;
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
 
-  if (!vw || !vh) {
-    alert('Video belum siap. Coba ambil foto lagi sebentar lagi.');
-    return;
-  }
-
-  const videoAspect = vw / vh;
-  let sx, sy, sSize;
-
-  if (videoAspect > 1) {
-    sSize = vh;
-    sx = (vw - sSize) / 2;
-    sy = 0;
-  } else {
-    sSize = vw;
-    sx = 0;
-    sy = (vh - sSize) / 2;
-  }
-
-  // ==== FLIP KAMERA (mirror selfie) ====
-  hiddenCtx.save();
-  hiddenCtx.scale(1, 1);
-  hiddenCtx.translate(size, 0);
-
-  hiddenCtx.drawImage(
-    video,
-    sx, sy, sSize, sSize,
-    0, 0, size, size
-  );
-
-  hiddenCtx.restore();
-  // =====================================
-
-  const img = new Image();
-  img.src = hiddenShot.toDataURL('image/png');
-  img.onload = () => {
-    photos.push(img);
-    updateThumbs();
-    if (photos.length === 3) {
-      btnDownload.disabled = false;
+    if (!vw || !vh) {
+      alert('Video belum siap. Coba ambil foto lagi sebentar lagi.');
+      return;
     }
-  };
-}
 
+    const videoAspect = vw / vh;
+    let sx, sy, sSize;
+
+    if (videoAspect > 1) {
+      // video lebih lebar → crop tengah secara horizontal
+      sSize = vh;
+      sx = (vw - sSize) / 2;
+      sy = 0;
+    } else {
+      // video lebih tinggi → crop tengah secara vertikal
+      sSize = vw;
+      sx = 0;
+      sy = (vh - sSize) / 2;
+    }
+
+    // ==== FLIP KAMERA (mirror selfie) PADA HASIL FOTO ====
+    hiddenCtx.save();
+    hiddenCtx.translate(size, 0);   // geser ke kanan
+    hiddenCtx.scale(-1, 1);         // mirror horizontal
+
+    hiddenCtx.drawImage(
+      video,
+      sx, sy, sSize, sSize,
+      0, 0, size, size
+    );
+
+    hiddenCtx.restore();
+    // =====================================
+
+    const img = new Image();
+    img.src = hiddenShot.toDataURL('image/png');
+    img.onload = () => {
+      photos.push(img);
+      updateThumbs();
+      if (photos.length === 3) {
+        btnDownload.disabled = false;
+      }
+    };
+  }
 
   function updateThumbs() {
     slotCountEl.textContent = photos.length;
@@ -445,3 +451,4 @@
 
 </body>
 </html>
+```
